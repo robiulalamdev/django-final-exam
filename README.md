@@ -2,6 +2,10 @@
 
 Clothify is a RESTful e-commerce API built using Django REST Framework (DRF). It provides endpoints for managing products, categories, orders, and carts. The project also implements JWT authentication using Djoser and includes API documentation with Swagger.
 
+## Project Requirement Doc
+
+- https://docs.google.com/document/d/1bcvvQrsy6yTW9QvVF-OiDfH1290DEdDCvEATu03K0kM/edit?tab=t.0
+
 ## Features
 
 - Product and category management
