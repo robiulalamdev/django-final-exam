@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [".vercel.app", '127.0.0.1']
 AUTH_USER_MODEL = 'users.User'
 
 CORS_ALLOWED_ORIGINS = [
+    'https://clothifyshop.vercel.app',
     "http://localhost:5173",
     "http://localhost:3000"
 ]
