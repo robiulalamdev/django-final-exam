@@ -1,4 +1,4 @@
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Avg
 from django.db.models.functions import TruncMonth
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
@@ -12,33 +12,37 @@ from datetime import datetime, timedelta
 @permission_classes([IsAdminUser])
 def admin_statistics(request):
     # Get date range for monthly data
+
+    print('admin_statistics')
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365)  # Last 12 months
     
     # Monthly sales data
     monthly_sales = Order.objects.filter(
-        created_at__range=(start_date, end_date)
+        placed_at__range=(start_date, end_date)
     ).annotate(
-        month=TruncMonth('created_at')
+        month=TruncMonth('placed_at')
     ).values('month').annotate(
-        total_sales=Sum('total_amount'),
+        total_sales=Sum('items__unit_price' * 'items__quantity'),
         order_count=Count('id')
     ).order_by('month')
     
     # Most popular products
     popular_products = Product.objects.annotate(
         total_ordered=Count('orderitem'),
-        avg_rating=Avg('reviews__ratings')
+        avg_rating=Avg('review__ratings')
     ).order_by('-total_ordered')[:10]
     
     # Top buyers
     top_buyers = User.objects.annotate(
-        total_spent=Sum('orders__total_amount'),
-        order_count=Count('orders')
+        total_spent=Sum('order__items__unit_price' * 'order__items__quantity'),
+        order_count=Count('order')
     ).exclude(total_spent=None).order_by('-total_spent')[:10]
     
     # Recent orders
-    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:5]
+    recent_orders = Order.objects.annotate(
+        total_amount=Sum('items__unit_price' * 'items__quantity')
+    ).select_related('user').order_by('-placed_at')[:5]
     
     return Response({
         'monthly_sales': [{

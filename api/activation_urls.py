@@ -1,6 +1,8 @@
 from django.urls import path
-from djoser import views
+from djoser.views import UserViewSet
+from api.views import CustomActivationView
 
 urlpatterns = [
-    path('activate/<str:uid>/<str:token>/', views.UserActivationView.as_view(), name='activate-user'),
+    # path('activate/<str:uid>/<str:token>/', UserViewSet.as_view({'post': 'activation'}), name='activate-user'),
+     path('activate/<str:uid>/<str:token>/', CustomActivationView.as_view(), name='activate-user'),
 ]

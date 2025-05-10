@@ -11,6 +11,7 @@ from api.permissions import IsAdminOrReadOnly
 from product.permissions import IsReviewAuthorOrReadonly
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.decorators import action
 
 
 class ProductViewSet(ModelViewSet):
@@ -22,6 +23,14 @@ class ProductViewSet(ModelViewSet):
     search_fields = ['name', 'description']
     ordering_fields = ['price', 'updated_at']
     permission_classes = [IsAdminOrReadOnly]
+
+    @action(detail=False, methods=['get'])
+    @swagger_auto_schema(tags=['Products'], operation_summary='Get latest 10 products')
+    def latest(self, request):
+        from rest_framework.response import Response
+        latest_products = Product.objects.all().order_by('-created_at')[:8]
+        serializer = self.get_serializer(latest_products, many=True)
+        return Response(serializer.data)
 
     @swagger_auto_schema(tags=['Products'], operation_summary='Retrieve a list of products')
     def list(self, request, *args, **kwargs):
@@ -123,6 +132,14 @@ class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [IsReviewAuthorOrReadonly]
 
+    @action(detail=False, methods=['get'])
+    @swagger_auto_schema(tags=['Reviews'], operation_summary='Get my reviews')
+    def my_reviews(self, request):
+        from rest_framework.response import Response
+        reviews = Review.objects.filter(user=request.user)
+        serializer = self.get_serializer(reviews, many=True)
+        return Response(serializer.data)
+
     @swagger_auto_schema(tags=['Reviews'], operation_summary='List product reviews')
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -154,7 +171,14 @@ class ReviewViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        return Review.objects.filter(product_id=self.kwargs.get('product_pk'))
+        product_pk = self.kwargs.get('product_pk')
+        if product_pk is not None:
+            queryset = Review.objects.filter(product_id=product_pk)
+        else:
+            queryset = Review.objects.all()
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+        return queryset
 
     def get_serializer_context(self):
         return {'product_id': self.kwargs.get('product_pk')}
